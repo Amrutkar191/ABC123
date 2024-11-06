@@ -1,0 +1,81 @@
+#include <iostream>
+#include <vector>
+#include <algorithm> // for std::shuffle
+#include <ctime> // for clock
+#include <random> // for random number generation
+using namespace std;
+
+int partition(vector<int>& vec, int low, int high) {
+    int count = 0;
+    int pivot = vec[low];
+    cout << "Pivot : " << pivot << endl;
+    for (int i = low + 1; i <= high; i++) {
+        if (vec[i] < pivot) {
+            count++;
+        }
+    }
+    int pivotIndex = low + count;
+    swap(vec[low], vec[pivotIndex]);
+    int i = low;
+    int j = high;
+    while (i < pivotIndex && j > pivotIndex) {
+        while (vec[i] < vec[pivotIndex]) {
+            i++;
+        }
+        while (vec[j] > vec[pivotIndex]) {
+            j--;
+        }
+        if (i < pivotIndex && j > pivotIndex && vec[i] > vec[pivotIndex] && vec[j] < vec[pivotIndex]) {
+            swap(vec[i], vec[j]);
+            i++;
+            j--;
+        }
+    }
+    return pivotIndex;
+}
+
+void quickSort(vector<int>& vec, int low, int high) {
+    if (low >= high) {
+        return;
+    }
+    int p = partition(vec, low, high);
+    quickSort(vec, low, p - 1);
+    quickSort(vec, p + 1, high);
+}
+
+int main() {
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(1, 1000);
+    int n = 100;
+    vector<int> vec;
+    bool used[1001] = { false };
+    while (vec.size() < n) {
+        int num = dis(gen);
+        if (!used[num]) {
+            vec.push_back(num);
+            used[num] = true;
+        }
+    }
+    cout << "Vector before execution: " << endl;
+    for (int num : vec) {
+        cout << num << " ";
+    }
+    cout << endl;
+    
+    clock_t start, end;
+    start = clock();
+    quickSort(vec, 0, vec.size() - 1);
+    end = clock();
+    
+    cout << "Vector after quick sort: " << endl;
+    for (int num : vec) {
+        cout << num << " ";
+    }
+    cout << endl;
+    
+    long double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+    cout << endl;
+    cout << "Execution time: " << time_taken << endl;
+    return 0;
+}

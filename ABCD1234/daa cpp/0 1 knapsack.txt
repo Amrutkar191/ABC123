@@ -1,0 +1,100 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+using namespace std;
+
+// Function to solve the knapsack problem using dynamic programming
+int knapsackDP(const vector<int> &weights, const vector<int> &profits, int capacity, vector<int> &solution) {
+    int n = profits.size();  // Number of items
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));  // DP table to store maximum profit
+
+    // Fill the DP table
+    for (int i = 1; i <= n; i++) {  // Iterate through each item
+        for (int w = 1; w <= capacity; w++) {  // Iterate through all possible weights from 0 to capacity
+            // If the weight of the item is less than or equal to the current capacity
+            if (weights[i - 1] <= w) {
+                // Take the maximum of not including the item or including the item
+                dp[i][w] = max(dp[i - 1][w], dp[i - 1][w - weights[i - 1]] + profits[i - 1]);
+            } else {
+                // If the item can't be included, carry forward the profit without this item
+                dp[i][w] = dp[i - 1][w];
+            }
+        }
+    }
+
+    // Trace back to find which items were included in the optimal solution
+    int w = capacity;
+    for (int i = n; i > 0; i--) {
+        if (dp[i][w] != dp[i - 1][w]) {  // If the profit changed, this item was included
+            solution[i - 1] = 1;  // Mark the item as included
+            w -= weights[i - 1];  // Reduce the capacity by the weight of the included item
+        }
+    }
+    
+    // Return the maximum profit
+    return dp[n][capacity];
+}
+
+// Function to print all possible solutions and their corresponding profits
+void printAllSolutions(const vector<int> &weights, const vector<int> &profits, int capacity) {
+    int n = profits.size();  // Number of items
+    cout << "\nAll Possible Solutions (with their corresponding profit):" << endl;
+
+    // Iterate through all subsets of items (from 0 to 2^n - 1)
+    for (int i = 0; i < (1 << n); i++) {
+        string subset = "";  // To store the current subset of items
+        int total_weight = 0;  // Total weight of the current subset
+        int total_profit = 0;  // Total profit of the current subset
+
+        // Check each bit of i (each bit represents whether an item is included)
+        for (int j = 0; j < n; j++) {
+            if (i & (1 << j)) {  // If the j-th item is included in the current subset
+                subset += "1";
+                total_weight += weights[j];
+                total_profit += profits[j];
+            } else {
+                subset += "0";
+            }
+        }
+        // Print the subset if the total weight is less than or equal to the knapsack capacity
+        if (total_weight <= capacity) {
+            cout << "Solution: " << subset << ", Total Profit: " << total_profit << endl;
+        }
+    }
+}
+
+int main() {
+    int n, capacity;
+    cout << "Enter the number of items: ";
+    cin >> n;  // Input the number of items
+
+    vector<int> weights(n), profits(n);
+    
+    // Input the weight and profit of each item
+    for (int i = 0; i < n; i++) {
+        cout << "Enter weight of item " << i + 1 << ": ";
+        cin >> weights[i];
+        cout << "Enter profit of item " << i + 1 << ": ";
+        cin >> profits[i];
+    }
+
+    cout << "Enter the capacity of the knapsack: ";
+    cin >> capacity;  // Input the capacity of the knapsack
+
+    vector<int> solution(n, 0);  // To store the solution (1 for item included, 0 for item excluded)
+    
+    // Print all possible solutions and their corresponding profits
+    printAllSolutions(weights, profits, capacity);
+    
+    // Solve the knapsack problem using dynamic programming and get the maximum profit
+    int maxProfit = knapsackDP(weights, profits, capacity, solution);
+    
+    // Output the optimal solution
+    cout << "\nOptimal Solution:" << endl;
+    cout << "Items taken: ";
+    for (int i = 0; i < n; i++) {
+        cout << solution[i] << " ";  // Output which items are taken (1 = taken, 0 = not taken)
+    }
+    cout << "\nMaximum Profit: " << maxProfit << endl;  // Output the maximum profit
+    return 0;
+}

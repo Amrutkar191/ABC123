@@ -1,0 +1,139 @@
+#include <iostream>
+#include <queue>
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <iomanip> // For formatted output
+using namespace std;
+
+// Node structure for Huffman Tree
+struct Node {
+    char char_value;  // Character represented by the node
+    int freq;         // Frequency of the character
+    Node *left, *right;  // Pointers to left and right child nodes
+
+    // Constructor for Node, initializes values
+    Node(char char_value, int freq) {
+        this->char_value = char_value;
+        this->freq = freq;
+        left = right = nullptr;
+    }
+};
+
+// Comparator for priority queue (min-heap) to compare nodes based on frequency
+struct compare {
+    bool operator()(Node* left, Node* right) {
+        return left->freq > right->freq; // To make the queue a min-heap based on frequency
+    }
+};
+
+// Function to generate Huffman codes by traversing the tree
+void generateCodes(Node* root, string prefix, unordered_map<char, string> &codebook) {
+    if (root == nullptr) return; // Base case: if the node is null, return
+
+    // If it's a leaf node, assign a Huffman code to the character
+    if (root->char_value != '\0') {
+        codebook[root->char_value] = prefix;
+    } else {
+        // Recursive calls for left and right subtrees, adding '0' or '1' to the prefix
+        generateCodes(root->left, prefix + "0", codebook);
+        generateCodes(root->right, prefix + "1", codebook);
+    }
+}
+
+// Function to build the Huffman Tree from the frequency map
+Node* buildHuffmanTree(unordered_map<char, int> frequencies) {
+    // Priority queue (min-heap) to build the tree, sorted by frequency
+    priority_queue<Node*, vector<Node*>, compare> min_heap;
+
+    // Push all characters with their frequencies into the priority queue
+    for (auto pair : frequencies) {
+        min_heap.push(new Node(pair.first, pair.second));
+    }
+
+    // Build the Huffman Tree by merging nodes with the lowest frequencies
+    while (min_heap.size() > 1) {
+        // Pop two nodes with the lowest frequencies
+        Node* left = min_heap.top(); min_heap.pop();
+        Node* right = min_heap.top(); min_heap.pop();
+
+        // Create a new internal node with combined frequency
+        Node* merged = new Node('\0', left->freq + right->freq);
+        merged->left = left; // Left child
+        merged->right = right; // Right child
+
+        // Push the merged node back into the priority queue
+        min_heap.push(merged);
+    }
+
+    // The root of the tree is the last remaining node
+    return min_heap.top();
+}
+
+// Function to print the Huffman Encoding Table
+void printHuffmanTable(unordered_map<char, int> frequencies, unordered_map<char, string> codebook) {
+    // Print the header for the encoding table
+    cout << "\nHuffman Encoding Table:\n";
+    cout << left << setw(10) << "Symbol" << setw(10) << "Frequency" << setw(20) << "Code" <<
+        setw(15) << "Size" << endl;
+    cout << string(55, '-') << endl;
+
+    // Print each character, its frequency, its Huffman code, and the size (frequency * code length)
+    for (auto pair : frequencies) {
+        string code = codebook[pair.first];
+        int size = pair.second * code.length();
+        cout << left << setw(10) << pair.first << setw(10) << pair.second << setw(20) << code << setw(15) 
+             << size << endl;
+}
+
+// Function to perform Huffman Encoding and display the results
+void huffmanEncoding(unordered_map<char, int> frequencies) {
+    // Build the Huffman Tree
+    Node* root = buildHuffmanTree(frequencies);
+
+    // Generate Huffman codes from the tree
+    unordered_map<char, string> codebook;
+    generateCodes(root, "", codebook);
+
+    // Print the generated Huffman codes for each character
+    cout << "\nGenerated Huffman Codes:\n";
+    for (auto pair : codebook) {
+        cout << "Character '" << pair.first << "': " << pair.second << endl;
+    }
+
+    // Calculate the size of the encoded data and other statistics
+    int encoded_size = 0;
+    int total_frequency = 0;
+    int char_bits = frequencies.size() * 8;  // Size if characters were represented by 8 bits each
+
+    // Calculate the total encoded size and total frequency
+    for (auto pair : frequencies) {
+        encoded_size += pair.second * codebook[pair.first].length(); // Frequency * Code length
+        total_frequency += pair.second;
+    }
+
+    // Calculate the average code length
+    double average_code_length = static_cast<double>(encoded_size) / total_frequency;
+
+    // Print the Huffman Encoding Table
+    printHuffmanTable(frequencies, codebook);
+
+    // Display statistics related to encoding
+    cout << "\nOriginal Size: " << char_bits << " bits" << endl;
+    cout << "Encoded Size: " << encoded_size << " bits" << endl;
+    cout << "\nCharacter Bits: " << char_bits << " bits" << endl;
+    cout << "Total Frequency: " << total_frequency << " units" << endl;
+    cout << "Encoded Data Bits: " << encoded_size << " bits" << endl;
+    cout << "Total Encoding Size: " << char_bits + encoded_size + total_frequency << " bits" << endl;
+    cout << "Average Code Length per Character: " << fixed << setprecision(2) << average_code_length 
+         << " bits" << endl;
+}
+
+int main() {
+    // Example frequencies for characters A, B, C, D
+    unordered_map<char, int> frequencies = { {'A', 5}, {'B', 1}, {'C', 6}, {'D', 3} };
+
+    // Perform Huffman encoding and display results
+    huffmanEncoding(frequencies);
+    return 0;
+}

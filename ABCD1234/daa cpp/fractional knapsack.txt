@@ -1,0 +1,121 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+// Define a class 'Item' to store information about each item.
+class Item {
+public:
+    int weight;     // Weight of the item
+    int profit;     // Profit of the item
+    double ratio;   // Profit to weight ratio
+
+    // Constructor to initialize weight, profit, and calculate the ratio.
+    Item(int w, int p) {
+        weight = w;
+        profit = p;
+        ratio = static_cast<double>(profit) / weight; // Calculate ratio as profit/weight
+    }
+
+    // Function to display the item details.
+    void display() const {
+        cout << "Weight: " << weight << ", Profit: " << profit << ", pi/wi: " << ratio << endl;
+    }
+};
+
+// Comparison function to sort items based on the ratio in descending order.
+bool compare(const Item &a, const Item &b) {
+    return a.ratio > b.ratio; // Compare based on profit-to-weight ratio
+}
+
+// Function to solve the fractional knapsack problem using the greedy method.
+double fractional_knapsack(int capacity, vector<Item> &items) {
+    // Sort items in decreasing order of profit-to-weight ratio.
+    sort(items.begin(), items.end(), compare);
+    double total_profit = 0.0;  // Variable to store the total profit.
+    int current_weight = 0;     // Variable to track the current weight in the knapsack.
+
+    cout << "\nItems taken:" << endl;
+
+    // Loop through each item and decide whether to take it fully or partially.
+    for (const auto &item : items) {
+        if (current_weight + item.weight <= capacity) {
+            // If the item can be taken completely.
+            current_weight += item.weight;
+            total_profit += item.profit;
+            cout << "Product with weight " << item.weight << " and profit " << item.profit << " taken fully." << endl;
+        } else {
+            // If the item has to be taken partially.
+            int remaining_weight = capacity - current_weight;  // Calculate remaining weight.
+            double fraction = static_cast<double>(remaining_weight) / item.weight;  // Calculate the fraction to take.
+            total_profit += item.profit * fraction;  // Add fractional profit.
+            cout << "Product with weight " << item.weight << " and profit " << item.profit << " taken partially (fraction: " << fraction << ")." << endl;
+            break;  // No more space left in the knapsack, exit the loop.
+        }
+    }
+
+    return total_profit;  // Return the total profit achieved.
+}
+
+// Function to print all possible combinations of items and their profits.
+void print_combinations(const vector<Item> &items, int capacity) {
+    int n = items.size();  // Get the number of items.
+    double max_profit = fractional_knapsack(capacity, const_cast<vector<Item>&>(items));  // Solve the knapsack problem and get the maximum profit.
+
+    cout << "\nAll possible combinations and their profits:" << endl;
+
+    // Generate all combinations using bitmasking.
+    for (int i = 1; i < (1 << n); ++i) {
+        vector<pair<int, int>> combination;  // To store the current combination of items.
+        int total_weight = 0;  // Total weight of the current combination.
+        double total_profit = 0.0;  // Total profit of the current combination.
+
+        // Check which items are included in the current combination.
+        for (int j = 0; j < n; ++j) {
+            if (i & (1 << j)) {  // If the jth item is included in this combination.
+                if (total_weight + items[j].weight <= capacity) {  // Ensure the total weight does not exceed the capacity.
+                    total_weight += items[j].weight;
+                    total_profit += items[j].profit;
+                    combination.push_back({items[j].weight, items[j].profit});
+                }
+            }
+        }
+
+        // Print the current combination and its profit.
+        cout << "Combination: [";
+        for (size_t k = 0; k < combination.size(); ++k) {
+            cout << "(" << combination[k].first << ", " << combination[k].second << ")";
+            if (k != combination.size() - 1) cout << ", ";
+        }
+        cout << "], Profit: " << total_profit << endl;
+    }
+
+    // Display the maximum profit obtained.
+    cout << "\nMaximum value in Knapsack = " << max_profit << endl;
+}
+
+int main() {
+    int n, capacity;
+
+    // Input the number of products and the knapsack capacity.
+    cout << "Enter the number of products: ";
+    cin >> n;
+    cout << "Enter the capacity of the knapsack: ";
+    cin >> capacity;
+
+    vector<Item> items;
+
+    // Input the weight and profit for each item.
+    for (int i = 0; i < n; ++i) {
+        int weight, profit;
+        cout << "Weight and Profit for item " << i + 1 << ":" << endl;
+        cin >> weight >> profit;
+        items.emplace_back(weight, profit);  // Add the item to the items list.
+        items.back().display();  // Display the item details.
+    }
+
+    // Call the function to print all combinations and their profits.
+    print_combinations(items, capacity);
+
+    return 0;
+}
